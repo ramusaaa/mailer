@@ -149,4 +149,92 @@ if err := mailer.TestConnection(); err != nil {
 ```
 
 ---
-For more examples and details for each module and function, please check the code. 
+For more examples and details for each module and function, please check the code.
+
+---
+
+## React Email Template (SSR) Support
+
+> **Note:** To use React-based email templates (SSR), you must perform extra build steps. This is not automatic with `go get`.
+
+### Prerequisites
+- Rust toolchain (https://rustup.rs/)
+- Node.js & npm (https://nodejs.org/)
+- [esbuild](https://esbuild.github.io/) (install globally: `npm install -g esbuild`)
+- React **17.x** and react-dom **17.x** (see below)
+
+### Setup Steps
+
+1. **Install Node dependencies**
+   ```sh
+   cd mailer/ssr/src
+   npm install react@17 react-dom@17
+   ```
+2. **Bundle your React email component**
+   ```sh
+   npx esbuild WelcomeEmail.jsx \
+     --bundle \
+     --outfile=bundle.js \
+     --platform=browser \
+     --format=iife \
+     --define:process.env.NODE_ENV='"production"' \
+     --loader:.js=jsx
+   ```
+   > Replace `WelcomeEmail.jsx` with your own component if needed.
+
+3. **Build the Rust library**
+   ```sh
+   cargo build --release
+   ```
+
+4. **(Optional) Use the provided build script**
+   ```sh
+   cd mailer/ssr
+   bash build.sh
+   ```
+
+5. **Go usage**
+   - Now you can use React email templates in Go via SSR. See `mailer/ssr/rustffi.go` for usage.
+
+### Example React Email Component
+
+```jsx
+// WelcomeEmail.jsx
+import * as React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+
+function WelcomeEmail({ userName }) {
+  return (
+    <html>
+      <head>
+        <meta charSet="UTF-8" />
+        <title>Welcome!</title>
+      </head>
+      <body>
+        <h1>Welcome, {userName}!</h1>
+        <p>
+          Thank you for joining our service. We’re excited to have you on board.
+        </p>
+        <p>
+          <a href="https://yourcompany.com">Visit our website</a>
+        </p>
+      </body>
+    </html>
+  );
+}
+
+globalThis.renderEmail = function(props) {
+  return renderToStaticMarkup(<WelcomeEmail {...props} />);
+};
+
+export default WelcomeEmail;
+```
+
+### Notes
+- You **must** use React 17.x for SSR in V8 (React 18+ requires MessageChannel, which is not available in V8).
+- The Rust library and bundle.js must be rebuilt after any change to your React components.
+- If you want to distribute prebuilt binaries, consider providing a Dockerfile or release assets.
+
+---
+
+For questions or issues, please open an issue on GitHub.
