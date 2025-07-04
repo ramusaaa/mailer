@@ -1,0 +1,12 @@
+[package]
+name = "reactssr"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+rusty_v8 = "0.32"
+serde_json = "1"
+libc = "0.2"
